@@ -9,7 +9,9 @@ Ethernet:
 7. Заменен "прямой" кабель на кроссовый между Hub-PT (Hub0) и Hub-PT (Hub1).
 8. Заменен гигабитный порт на Laptop-PT (1.0.0.5) на FastEthernet.
 9. Заменен гигабитный порт на Laptop-PT (1.0.0.8) на FastEthernet.
-10.Заменен "прямой" кабель на кроссовый между Hub-PT (Hub1) и репитером Repeater-PT (Repeater0). 
+10. На хаб Hub-PT (Hub1) добавлен дополнительный порт FastEthernet
+11. Установлен "прямой" кабель между ноутбуком Laptop-PT (1.0.0.9) и Hub-PT (Hub-1).
+12. Заменен "прямой" кабель на кроссовый между Hub-PT (Hub1) и репитером Repeater-PT (Repeater0). 
 
 Wi-Fi:
 
