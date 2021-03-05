@@ -1,0 +1,91 @@
+1. Конфигурируем маршрутизатор Router0
+
+Прописываем IP интерфейса fa4/0
+
+Router>enable
+Router#conf t
+Router(config)#int fa4/0
+Router(config-if)#ip addr 172.17.0.1 255.255.0.0
+Router(config-if)#no shut
+
+Прописываем IP интерфейса fa5/0
+
+Router(config)#int fa5/0
+Router(config-if)#ip addr 172.16.0.1 255.255.0.0
+Router(config-if)#no shut
+
+Прописываем статические маршруты.
+
+Router(config)#ip route 192.168.2.0 255.255.255.0 172.17.0.2
+Router(config)#ip route 192.168.3.0 255.255.255.0 172.16.0.2
+
+2. Конфигурируем маршрутизатор Router1
+
+Прописываем IP интерфейса fa4/0
+
+Router>enable
+Router#conf t
+Router(config)#int fa4/0
+Router(config-if)#ip addr 172.17.0.2 255.255.0.0
+Router(config-if)#no shut
+
+Прописываем IP интерфейса fa5/0
+
+Router(config)#int fa5/0
+Router(config-if)#ip addr 172.18.0.1 255.255.0.0
+Router(config-if)#no shut
+
+Прописываем статические маршруты.
+
+Router(config)#ip route 192.168.1.0 255.255.255.0 172.17.0.1
+Router(config)#ip route 192.168.3.0 255.255.255.0 172.18.0.2
+
+3. Конфигурируем маршрутизатор Router2
+
+Прописываем IP интерфейса fa4/0
+
+Router>enable
+Router#conf t
+Router(config)#int fa4/0
+Router(config-if)#ip addr 172.18.0.2 255.255.0.0
+Router(config-if)#no shut
+
+Router(config)#int fa5/0
+Router(config-if)#ip addr 172.16.0.2 255.255.0.0
+Router(config-if)#no shut
+
+Прописываем статические маршруты.
+
+Router(config)#ip route 192.168.1.0 255.255.255.0 172.16.0.1
+Router(config)#ip route 192.168.2.0 255.255.255.0 172.18.0.1
+
+4. Проверяем.
+
+Смотрим маршруты маршрутзитора Router0
+Router#sh ip ro
+...
+C    172.16.0.0/16 is directly connected, FastEthernet5/0
+C    172.17.0.0/16 is directly connected, FastEthernet4/0
+C    192.168.1.0/24 is directly connected, FastEthernet0/0
+S    192.168.2.0/24 [1/0] via 172.17.0.2
+S    192.168.3.0/24 [1/0] via 172.16.0.2
+
+Смотрим маршруты маршрутзитора Router1
+Router#sh ip ro
+...
+C    172.17.0.0/16 is directly connected, FastEthernet4/0
+C    172.18.0.0/16 is directly connected, FastEthernet5/0
+S    192.168.1.0/24 [1/0] via 172.17.0.1
+C    192.168.2.0/24 is directly connected, FastEthernet0/0
+S    192.168.3.0/24 [1/0] via 172.18.0.2
+
+Смотрим маршруты маршрутзитора Router2
+Router#sh ip ro
+...
+C    172.16.0.0/16 is directly connected, FastEthernet5/0
+C    172.18.0.0/16 is directly connected, FastEthernet4/0
+S    192.168.1.0/24 [1/0] via 172.16.0.1
+S    192.168.2.0/24 [1/0] via 172.18.0.1
+C    192.168.3.0/24 is directly connected, FastEthernet0/0
+
+
