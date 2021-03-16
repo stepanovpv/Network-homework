@@ -1,0 +1,82 @@
+1.Настраиваем роутеры провайдеров. 
+
+Пример настройки роутера BigTelecom.
+
+Убираем статическую маршрутизацию:
+no ip route 10.0.0.0 255.0.0.0 6.0.0.2
+no ip route 220.1.1.0 255.255.255.0 220.1.2.1
+no ip route 1.2.0.0 255.255.0.0 220.1.2.1
+no ip route 5.0.0.0 255.0.0.0 220.1.2.1
+
+Настраиваем RIP
+
+router rip
+v 2
+network 6.0.0.0
+network 130.1.0.0
+network 220.1.2.0
+
+Сохраняем конфигурацию.
+
+Повторяем процедуру для остальных роутеров. Сети будут другие.
+
+2. Настраиваем домашние роутеры.
+
+Пример настройки роутера HeadOffice
+
+Для внешнего интерфейса настраиваем RIP:
+
+outer(config)#router rip
+Router(config-router)#v 2
+Router(config-router)#network 6.0.0.0
+
+Настраиваем NAT:
+
+access-list 1 permit 10.0.0.0 0.0.0.255
+ip nat inside source list 1 int fa0/1 overload
+int fa 0/1
+ip nat outside
+int fa 0/0
+ip nat inside
+
+Сохраняем конфигурацию.
+
+Повторяем процедуру для второго домашего роутера FilialOffice.
+
+3. Проверка.
+
+Роутер FilialOffice:
+
+Router#sh ip ro
+...
+R    1.0.0.0/8 [120/3] via 7.0.0.1, 00:00:14, FastEthernet0/1
+R    5.0.0.0/8 [120/2] via 7.0.0.1, 00:00:14, FastEthernet0/1
+R    6.0.0.0/8 [120/2] via 7.0.0.1, 00:00:14, FastEthernet0/1
+C    7.0.0.0/8 is directly connected, FastEthernet0/1
+R    130.1.0.0/16 [120/1] via 7.0.0.1, 00:00:14, FastEthernet0/1
+R    130.2.0.0/16 [120/1] via 7.0.0.1, 00:00:14, FastEthernet0/1
+C    192.168.0.0/24 is directly connected, FastEthernet0/0
+R    220.1.1.0/24 [120/2] via 7.0.0.1, 00:00:14, FastEthernet0/1
+R    220.1.2.0/24 [120/2] via 7.0.0.1, 00:00:14, FastEthernet0/1
+
+Router#sh ip nat tr
+Pro  Inside global     Inside local       Outside local      Outside global
+tcp 7.0.0.2:1025       192.168.0.2:1025   5.1.0.5:80         5.1.0.5:80
+
+Роутер HeadOffice:
+
+Router>sh ip ro
+...
+R    1.0.0.0/8 [120/2] via 6.0.0.1, 00:00:07, FastEthernet0/1
+R    5.0.0.0/8 [120/3] via 6.0.0.1, 00:00:07, FastEthernet0/1
+C    6.0.0.0/8 is directly connected, FastEthernet0/1
+R    7.0.0.0/8 [120/2] via 6.0.0.1, 00:00:07, FastEthernet0/1
+C    10.0.0.0/8 is directly connected, FastEthernet0/0
+R    130.1.0.0/16 [120/1] via 6.0.0.1, 00:00:07, FastEthernet0/1
+R    130.2.0.0/16 [120/2] via 6.0.0.1, 00:00:07, FastEthernet0/1
+R    220.1.1.0/24 [120/2] via 6.0.0.1, 00:00:07, FastEthernet0/1
+R    220.1.2.0/24 [120/1] via 6.0.0.1, 00:00:07, FastEthernet0/1
+
+Router>sh ip nat tr
+Pro  Inside global     Inside local       Outside local      Outside global
+tcp 6.0.0.2:1025       10.0.0.2:1025      5.1.0.5:80         5.1.0.5:80
