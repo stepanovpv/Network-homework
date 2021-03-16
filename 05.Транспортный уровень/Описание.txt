@@ -80,3 +80,5 @@ R    220.1.2.0/24 [120/1] via 6.0.0.1, 00:00:07, FastEthernet0/1
 Router>sh ip nat tr
 Pro  Inside global     Inside local       Outside local      Outside global
 tcp 6.0.0.2:1025       10.0.0.2:1025      5.1.0.5:80         5.1.0.5:80
+
+Пингуются из внутренних сетей все внешние устройства. Устройства за NAT из вне не пингуются.
