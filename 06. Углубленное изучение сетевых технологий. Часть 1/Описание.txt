@@ -1,0 +1,128 @@
+1. Посмотреть с помощью netstat или ss (сначала справку netstat --help) какие сокеты используются, tcp и udp. Описать 4-5 сервисов, для чего используются.
+
+pavel@ubuntu:~$ ss -tapu
+Netid    State     Recv-Q    Send-Q              Local Address:Port                    Peer Address:Port     Process
+udp      UNCONN    0         0                         0.0.0.0:34572                        0.0.0.0:*
+udp      UNCONN    0         0                   127.0.0.53%lo:domain                       0.0.0.0:*
+udp      UNCONN    0         0             192.168.88.17%ens33:bootpc                       0.0.0.0:*
+udp      UNCONN    0         0                         0.0.0.0:631                          0.0.0.0:*
+udp      UNCONN    0         0                         0.0.0.0:mdns                         0.0.0.0:*
+udp      UNCONN    0         0                            [::]:58351                           [::]:*
+udp      UNCONN    0         0                            [::]:mdns                            [::]:*
+tcp      LISTEN    0         511                       0.0.0.0:http                         0.0.0.0:*
+tcp      LISTEN    0         4096                127.0.0.53%lo:domain                       0.0.0.0:*
+tcp      LISTEN    0         128                       0.0.0.0:ssh                          0.0.0.0:*
+tcp      LISTEN    0         5                       127.0.0.1:ipp                          0.0.0.0:*
+tcp      LISTEN    0         100                       0.0.0.0:smtp                         0.0.0.0:*
+tcp      ESTAB     0         36                  192.168.88.17:ssh                   80.2*.2*.1*:56055
+tcp      LISTEN    0         511                          [::]:http                            [::]:*
+tcp      LISTEN    0         128                          [::]:ssh                             [::]:*
+tcp      LISTEN    0         2                           [::1]:3350                            [::]:*
+tcp      LISTEN    0         5                           [::1]:ipp                             [::]:*
+tcp      LISTEN    0         100                          [::]:smtp                            [::]:*
+tcp      LISTEN    0         2                               *:ms-wbt-server                      *:*
+
+Описание служб:
+
+udp 0.0.0.0:631 - веб-сервер печати CUPS
+udp 192.168.88.17%ens33:68 - порт клиента DHCP
+tcp 0.0.0.0:http - www (порт 80)
+tcp 0.0.0.0:ssh - ssh (порт 22) Одно соединение установлено (ESTAB). Сокет все равно слушает.
+tcp 0.0.0.0:smtp - почта (25 порт)
+
+PS: Часть IP-адреса удаленного клиента в целях безопасности тут изменил вручную на *.
+
+
+
+2. Либо с помощью nmap или zmap посмотреть какие сервисы используются на выбранном из доступных в Интернет серверов.
+
+pavel@ubuntu:~$ nmap gb.ru
+Starting Nmap 7.91 ( https://nmap.org ) at 2021-03-19 12:57 MSK
+Nmap scan report for gb.ru (178.248.232.209)
+Host is up (0.012s latency).
+Not shown: 998 filtered ports
+PORT    STATE SERVICE
+80/tcp  open  http
+443/tcp open  https
+
+Nmap done: 1 IP address (1 host up) scanned in 9.70 seconds
+
+На домене gb.ru открыты сокеты для подключения по http (80) и https (443)
+
+
+
+3. Средний вариант (но нужен linux c ssh-сервисом). Несколько раз подключиться, проверить, как меняются сокеты.
+
+pavel@ubuntu:~$ ss -tanpu
+Netid     State      Recv-Q     Send-Q               Local Address:Port              Peer Address:Port      Process
+........
+tcp       LISTEN     0          128                        0.0.0.0:22                     0.0.0.0:*
+tcp       ESTAB      0          0                    192.168.88.17:22               80.2*.2*.1*:56130
+tcp       ESTAB      0          0                    192.168.88.17:22               80.2*.2*.1*:56131
+tcp       ESTAB      0          36                   192.168.88.17:22               80.2*.2*.1*:56055
+........
+
+При создании допонительных подключений открываются новые соединения. 
+
+PS: Часть IP-адреса удаленного клиент в целях безопасности тут изменил вручную на *.
+
+
+
+
+4. Сложный вариант: нужен линукс и echo -сервер. Подключиться несколько раз, посмотреть что происходит с сокетами.
+
+Программа скомпилирована и запущена:
+
+pavel@ubuntu:~$ sudo ./echo7
+The server is up and running.
+
+Awaiting bytes from a client...
+
+Подключаемся к запущеному эхо-серверу:
+
+pavel@ubuntu:~$ telnet 127.0.0.1 7
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Echo server. Hello, 127.0.0.1:59440. Type your messages below:
+Hello
+Hello
+
+Подключаемся к запущенному эхо-серверу с другого терминала:
+
+pavel@ubuntu:~$ telnet 127.0.0.1 7
+Trying 127.0.0.1...
+Connected to 127.0.0.1.
+Escape character is '^]'.
+Echo server. Hello, 127.0.0.1:59442. Type your messages below:
+hello
+hello
+
+Результат работы на сервере:
+
+Received: 7 bytes       From: 127.0.0.1:59440   Message:
+Hello
+Sending the message back to 127.0.0.1:59440...
+
+Awaiting bytes from a client...
+
+Awaiting bytes from a client...
+Received: 7 bytes       From: 127.0.0.1:59442   Message:
+hello
+Sending the message back to 127.0.0.1:59442...
+
+Awaiting bytes from a client...
+
+
+Смотрим открытые сокеты:
+
+pavel@ubuntu:~$ ss -tuna
+Netid     State      Recv-Q     Send-Q               Local Address:Port              Peer Address:Port      Process
+............
+tcp       LISTEN     0          1                          0.0.0.0:7                      0.0.0.0:*
+tcp       ESTAB      0          0                        127.0.0.1:59440                127.0.0.1:7
+tcp       ESTAB      0          0                        127.0.0.1:59442                127.0.0.1:7
+tcp       ESTAB      0          0                        127.0.0.1:7                    127.0.0.1:59442
+............
+
+Видимо два подключения от клиентов. Один сокет до клиента в ожидании ответа. И сокет ожидания подключения.
