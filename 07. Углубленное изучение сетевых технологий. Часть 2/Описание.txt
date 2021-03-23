@@ -1,0 +1,90 @@
+1. Настроить GRE тоннель между серыми сетями в одном из примеров на маршрутизацию или нат.
+Либо повторить что было показано на уроке
+
+Настройка тоннеля осущетсвляется на примере NAT.
+
+Настраиваем тоннель в роутере HeadOffice:
+
+int tun 0
+ip addr 172.16.0.2 255.255.255.0
+tunnel source fa0/1
+tunnel destination 7.0.0.2
+
+Сохраняем изменения.
+
+Настраиваем тоннель в роутере FilialOffice:
+
+int tun 0
+ip addr 172.16.0.1 255.255.255.0
+tunnel source fa0/1
+tunnel destination 6.0.0.2
+
+Сохраняем изменения.
+
+Для того, чтобы сети видели друг друга через NAT на роутерах настраиваем OFTP-маршрутизацию:
+
+HeadOffice:
+router ospf 1
+network 192.168.0.0 0.0.0.255 area 0
+network 172.16.0.0 0.0.0.255 area 0
+
+Сохраняем изменения.
+
+FilialOffice:
+router ospf 1
+network 10.0.0.0 0.255.255.255 area 0
+network 172.16.0.0 0.0.0.255 area 0
+
+Сохраняем изменения.
+
+Проверяем:
+
+HeadOffice:
+
+traceroute 192.168.0.2
+Type escape sequence to abort.
+Tracing the route to 192.168.0.2
+
+  1   172.16.0.1      0 msec    0 msec    0 msec    
+  2   192.168.0.2     0 msec    0 msec    0 msec    
+
+Router#sh ip ro
+......
+R    1.0.0.0/8 [120/2] via 6.0.0.1, 00:00:27, FastEthernet0/1
+R    5.0.0.0/8 [120/3] via 6.0.0.1, 00:00:27, FastEthernet0/1
+C    6.0.0.0/8 is directly connected, FastEthernet0/1
+R    7.0.0.0/8 [120/2] via 6.0.0.1, 00:00:27, FastEthernet0/1
+C    10.0.0.0/8 is directly connected, FastEthernet0/0
+R    130.1.0.0/16 [120/1] via 6.0.0.1, 00:00:27, FastEthernet0/1
+R    130.2.0.0/16 [120/2] via 6.0.0.1, 00:00:27, FastEthernet0/1
+     172.16.0.0/24 is subnetted, 1 subnets
+C       172.16.0.0 is directly connected, Tunnel0
+O    192.168.0.0/24 [110/1001] via 172.16.0.1, 00:00:25, Tunnel0  <----------------
+R    220.1.1.0/24 [120/2] via 6.0.0.1, 00:00:27, FastEthernet0/1
+R    220.1.2.0/24 [120/1] via 6.0.0.1, 00:00:27, FastEthernet0/1
+
+FilialOffice:
+
+traceroute 10.0.0.2 
+Type escape sequence to abort.
+Tracing the route to 10.0.0.2
+
+  1   172.16.0.2      0 msec    0 msec    0 msec    
+  2   10.0.0.2        0 msec    0 msec    18 msec   
+
+sh ip ro
+...
+R    1.0.0.0/8 [120/3] via 7.0.0.1, 00:00:01, FastEthernet0/1
+R    5.0.0.0/8 [120/2] via 7.0.0.1, 00:00:01, FastEthernet0/1
+R    6.0.0.0/8 [120/2] via 7.0.0.1, 00:00:01, FastEthernet0/1
+C    7.0.0.0/8 is directly connected, FastEthernet0/1
+O    10.0.0.0/8 [110/1001] via 172.16.0.2, 00:02:43, Tunnel0      <----------------
+R    130.1.0.0/16 [120/1] via 7.0.0.1, 00:00:01, FastEthernet0/1
+R    130.2.0.0/16 [120/1] via 7.0.0.1, 00:00:01, FastEthernet0/1
+     172.16.0.0/24 is subnetted, 1 subnets
+C       172.16.0.0 is directly connected, Tunnel0
+C    192.168.0.0/24 is directly connected, FastEthernet0/0
+R    220.1.1.0/24 [120/2] via 7.0.0.1, 00:00:01, FastEthernet0/1
+R    220.1.2.0/24 [120/2] via 7.0.0.1, 00:00:01, FastEthernet0/1
+
+Маршрут туннелирован. Пинги проходят.
